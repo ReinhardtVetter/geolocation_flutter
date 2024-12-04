@@ -233,7 +233,7 @@ class _LocationScreenState extends State<LocationScreen> {
               "latitude": "**",
               "longitude": "**",
               "timestamp": "API POST",
-              "distance": "ERROR OCCURRED",
+              "distance": "ERROR OCCURRED: $e",
             });
           });
         }
@@ -284,7 +284,7 @@ class _LocationScreenState extends State<LocationScreen> {
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text(
-              'Location History:',
+              'Location History V2:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
