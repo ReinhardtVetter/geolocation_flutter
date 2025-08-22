@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
     as bg;
 import 'dart:math';
-import 'dart:convert'; // For JSON encoding
-import 'package:http/http.dart' as http; // For API requests
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
 import 'package:background_fetch/background_fetch.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'dart:io';
 
 void main() {
   runApp(const MainApp());
+  BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
 }
 
 class MainApp extends StatelessWidget {
@@ -17,6 +21,107 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       home: UsernameScreen(),
+    );
+  }
+}
+
+// Background Fetch headless task handler
+void backgroundFetchHeadlessTask(String taskId) async {
+  await performBackgroundTask();
+  BackgroundFetch.finish(taskId);
+}
+
+Future<void> performBackgroundTask() async {
+  try {
+    bg.Location location = await bg.BackgroundGeolocation.getCurrentPosition(
+      persist: false,
+    );
+    await LocationScreen.updateUIWithLocation(location);
+  } catch (e) {
+
+  }
+}
+
+class webviewScreen extends StatefulWidget {
+  final String username;
+
+  const webviewScreen({super.key, required this.username});
+
+  @override
+  _webviewScreenState createState() => _webviewScreenState();
+}
+
+class _webviewScreenState extends State<webviewScreen> {
+  late final WebViewController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _showWebview();
+  }
+
+  void _showWebview() {
+    final currentDate = DateTime.now();
+    final timestamp = currentDate.toUtc().toIso8601String();
+    final formattedTimestamp = timestamp.split('.')[0] + 'Z';
+
+    String id = "_abcdef1234567890abcdef1234567890";
+    String destination = "https://login.microsoftonline.com/60fcf832-af35-4960-9056-4d242cb86b7c/saml2";
+    String assertionConsumerServiceURL = "https://d3w44ipqagcsvn.cloudfront.net";
+    String issuer = "https://sts.windows.net/60fcf832-af35-4960-9056-4d242cb86b7c/";
+    String nameIDPolicyFormat = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress";
+    String ssoURLdecoded = '''
+    <samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
+                    ID="$id"
+                    Version="2.0"
+                    IssueInstant="$formattedTimestamp"
+                    Destination="$destination"
+                    AssertionConsumerServiceURL="$assertionConsumerServiceURL">
+        <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">$issuer</saml:Issuer>
+        <samlp:NameIDPolicy Format="$nameIDPolicyFormat" AllowCreate="true"/>
+    </samlp:AuthnRequest>
+    ''';
+    // Convert the input string to bytes
+    Uint8List inputBytes = utf8.encode(ssoURLdecoded);
+    // Compress (deflate) the bytes using Zlib
+    List<int> deflatedBytes = ZLibCodec(raw: true).encode(inputBytes);
+    // Base64 encode the deflated bytes
+    String base64Encoded = base64.encode(deflatedBytes);
+    // URI Encode
+    String ssoURIEncoded = Uri.encodeComponent(base64Encoded);
+    
+    controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (String url) {
+            if (url == 'https://d3w44ipqagcsvn.cloudfront.net' ||
+                url.contains('https://d3w44ipqagcsvn.cloudfront.net') ||
+                url.startsWith('https://d3w44ipqagcsvn.cloudfront.net')) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      LocationScreen(username: widget.username),
+                ),
+              );
+            }
+          },
+          onNavigationRequest: (NavigationRequest request) {
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(
+        'https://login.microsoftonline.com/60fcf832-af35-4960-9056-4d242cb86b7c/saml2?SAMLRequest=$ssoURIEncoded&login_hint=${widget.username}',
+      ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Flutter Simple Example')),
+      body: WebViewWidget(controller: controller),
     );
   }
 }
@@ -37,9 +142,15 @@ class _UsernameScreenState extends State<UsernameScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => LocationScreen(username: username),
+          builder: (context) => webviewScreen(username: username),
         ),
       );
+      /*Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LocationScreen(username: username),
+        ),
+      );*/
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a username')),
@@ -59,7 +170,7 @@ class _UsernameScreenState extends State<UsernameScreen> {
             TextField(
               controller: _usernameController,
               decoration: const InputDecoration(
-                labelText: 'Username',
+                labelText: 'Azure AD Username for SSO',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -82,9 +193,20 @@ class LocationScreen extends StatefulWidget {
 
   @override
   _LocationScreenState createState() => _LocationScreenState();
+
+  // Static method to update UI with location during background tasks
+  static Future<void> updateUIWithLocation(bg.Location location) async {
+    // Create a mock context for location update during background fetch
+    final _LocationScreenState? state =
+        _LocationScreenState.currentInstance; // Access the singleton instance
+    if (state != null) {
+      await state._submitAndUpdateUI(location);
+    }
+  }
 }
 
 class _LocationScreenState extends State<LocationScreen> {
+  static _LocationScreenState? currentInstance;
   String _locationText = "Waiting for location updates...";
   final List<Map<String, dynamic>> _locationHistory = [];
   Map<String, double>? _lastLocation;
@@ -92,11 +214,36 @@ class _LocationScreenState extends State<LocationScreen> {
   @override
   void initState() {
     super.initState();
+    currentInstance = this; // Assign singleton instance
     _initializeServices();
+    BackgroundFetch.configure(
+      BackgroundFetchConfig(
+        minimumFetchInterval: 15,
+        stopOnTerminate: false,
+        startOnBoot: true,
+        enableHeadless: true,
+      ),
+      (taskId) async {
+        await performBackgroundTask();
+        BackgroundFetch.finish(taskId);
+      },
+      (taskId) async {
+        BackgroundFetch.finish(taskId);
+      },
+    ).then((status) {
+
+    }).catchError((e) {
+
+    });
+  }
+
+  @override
+  void dispose() {
+    currentInstance = null; // Clear singleton instance
+    super.dispose();
   }
 
   void _initializeServices() {
-
     // ** LOG INITIALIZE SERVICES **
     setState(() {
       _locationText = "Welcome User: ${widget.username}";
@@ -120,7 +267,7 @@ class _LocationScreenState extends State<LocationScreen> {
       desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
       useSignificantChangesOnly: true,
       distanceFilter: 1000,
-      disableElasticity:true,
+      disableElasticity: true,
       stopOnTerminate: false,
       startOnBoot: true,
       enableHeadless: true,
@@ -162,7 +309,6 @@ class _LocationScreenState extends State<LocationScreen> {
       );
 
       if (distance >= 999) {
-
         setState(() {
           _locationHistory.add({
             "latitude": location.coords.latitude,
@@ -178,8 +324,7 @@ class _LocationScreenState extends State<LocationScreen> {
           "username": widget.username, // Pass the username
           "latitude": location.coords.latitude.toString(),
           "longitude": location.coords.longitude.toString(),
-          "distFromLast": distance?.toStringAsFixed(1) ??
-              "0.0", // Default to 0.0 if distance is null
+          "distFromLast": distance.toStringAsFixed(1),
           "datetime": DateTime.now()
               .toIso8601String(), // Current timestamp in ISO format
         };
@@ -269,7 +414,7 @@ class _LocationScreenState extends State<LocationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Location Tracker')),
+      appBar: AppBar(title: const Text('Location Tracker'), automaticallyImplyLeading: false),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -284,7 +429,7 @@ class _LocationScreenState extends State<LocationScreen> {
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text(
-              'Location History V2:',
+              'Location History V3:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
