@@ -1,0 +1,9 @@
+SAML 2.0
+Application Name: Technician Geolocation Tracking POC
+Single Sign-On URL (Assertion Consumer Service URL): geolocpoc://auth-callback
+Audience URI (Service Provider Entity ID): technician-tracking-geolocpoc
+Relay State: N/A
+Name ID Format: emailAddress (TBC by IDP team what they use as UPN)
+X.509 Certificate: IDP Provides their Public Cert
+
+IDP Team to respond with metadata

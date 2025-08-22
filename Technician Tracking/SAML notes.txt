@@ -1,0 +1,56 @@
+Login URL: https://login.microsoftonline.com/60fcf832-af35-4960-9056-4d242cb86b7c/saml2
+ 
+Identifier: https://sts.windows.net/60fcf832-af35-4960-9056-4d242cb86b7c/
+ 
+Logout: https://login.microsoftonline.com/60fcf832-af35-4960-9056-4d242cb86b7c/saml2
+ 
+Consumer Assertion URL: https://geolocpoc.s3-website.us-east-2.amazonaws.com
+
+App/client id: 020358c3-66f9-48d8-a646-a8ae8f5f2b3e
+
+Geolocation Tracking.cer
+ 
+
+johan.pienaar@dfafrica.co.za
+aMUJ8Gm5cX>p;g
+
+
+Phillip.Malele@dfafrica.co.za
+Ge0L0cP0c99534
+
+Temporary Access Pass: MC2f3MWh
+
+In the browser:
+https://login.microsoftonline.com/60fcf832-af35-4960-9056-4d242cb86b7c/saml2?SAMLRequest=<encodedXML>
+
+
+https://www.samltool.com/encode.php
+
+
+
+XML SAML Request
+
+### Key Details:
+1. Destination: The URL where the SAML request is sent, which is your Login URL.
+2. AssertionConsumerServiceURL: The URL where the service provider (SP) expects the SAML assertion response, which is your Assertion Consumer URL.
+3. Issuer: This is the entity ID of the service provider (SP), which is the Identifier URL.
+4. NameIDPolicy: Specifies that the name ID format should be an email address (you can modify this if you prefer a different format).
+5. RequestedAuthnContext: Specifies that the authentication should be secured using a password-protected transport.
+
+This XML would be base64 encoded when sent as part of an actual SAML request.
+
+
+https://login.microsoftonline.com/60fcf832-af35-4960-9056-4d242cb86b7c/saml2?SAMLRequest=jZLfS8MwEMffBf%2BHkfe2add1W9gGZUMYqMj88eCLZOlVA2muy6VO%2F3u7DnGKFUNecrn7fu6by4xkZWqRN%2F7FbmDXAPnBW2Usie5izhpnBUrSJKysgIRX4ja%2FuhRJyEXt0KNCw87PBr%2Bs9WrOnuRWFVDGyTAdZePJlP8899Q%2BgCONds5aTp88UQNrS15a3%2BbxJA3iOODpXZwIztv92FO4ak1qK32n%2F%2BJ9TSKKDD5rG1ZaOSQsPVqjLYQKqyjjpSonwySQ5XAUpNOMB1M%2ByoK0SNJEbSfZdqyiw2slPbycCNyBtkRLTQXuFtyrVnC%2FufziF8N9mup6J58VvdpQGWyK0qH1oQXPFkfl2QEjOuPuZEx%2FT0l%2B4tniE0aewr22Be7pIP8%2Fi7PohH7aUC2uW%2Bh6dYNGq%2FfBBbpK%2Bv6e4jDuIroIyi5VQCW1yYvCAREb5MbgfulAepgz7xpgUUs70r%2F%2F1MUH&login_hint=Phillip.Malele@dfafrica.co.za
+
+
+
+**************** App store connect
+
+SKU
+DFAfricaGeolocationTracking
+
+Name
+DF Africa Geolocation Tracking
+
+Bundle
+com.example.geolocpocFlutterApp

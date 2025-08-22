@@ -1,0 +1,9 @@
+<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
+                    ID="_abcdef1234567890abcdef1234567890"
+                    Version="2.0"
+                    IssueInstant="2024-11-04T12:00:00Z"
+                    Destination="https://login.microsoftonline.com/60fcf832-af35-4960-9056-4d242cb86b7c/saml2"
+                    AssertionConsumerServiceURL="https://d3w44ipqagcsvn.cloudfront.net">
+    <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">https://sts.windows.net/60fcf832-af35-4960-9056-4d242cb86b7c/</saml:Issuer>
+    <samlp:NameIDPolicy Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress" AllowCreate="true"/>
+</samlp:AuthnRequest>
